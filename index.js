@@ -1,5 +1,6 @@
 const normalize = require('./src/options/validator');
 const EventEmitter = require('events');
+const Validator = require('./src/validate');
 
 function NO_MODEL_INSTANCE_METHOD() {
 	throw new Error('Invalid method.');
@@ -20,16 +21,18 @@ function deepClone(object) {
 const Registry = module.exports = function Registry(options) {
 	const {
 		id,
-		models: modelOptionsList,
-		namespaces: namespaceOptionsList,
+		models: modelsOptionsMap,
+		namespaces: namespaceOptionsMap,
+		subscribes: subscribeOptionsMap,
 		strict = false
 	} = normalize(options);
 
 	const models = {};
-	const registry = Object.assign(new EventEmitter(), {
-		Model: new Proxy(models, {
+	const modelProxy = new Proxy(models, {
 
-		}),
+	});
+	const registry = Object.assign(new EventEmitter(), {
+		Model: modelProxy,
 		getSchemas() {
 			return {
 				models: {},
@@ -40,7 +43,7 @@ const Registry = module.exports = function Registry(options) {
 		}
 	});
 	
-	modelOptionsList.forEach(function Model({ name, schemas, methods }) {
+	modelsOptionsMap.forEach(function Model({ name, schemas, methods }) {
 		const instanceProxyOptions = {
 			set: NO_MODEL_INSTANCE_SET,
 			get(target, key, receiver) {
@@ -50,6 +53,8 @@ const Registry = module.exports = function Registry(options) {
 
 			}
 		};
+
+		const validator = Validator();
 
 		class ModelInstance {
 			constructor(data = {}) {
@@ -71,11 +76,15 @@ const Registry = module.exports = function Registry(options) {
 			const { handler } = methods[methodName];
 
 			ModelInstance.prototype[`$${methodName}`] = handler ? async function (options) {
-				const target = this.data;
+				try {
+					const data = await handler(options, modelProxy);
 
-				await handler(target, options);
+					//TODO 完整性检查
+	
+					return this;
+				} catch (error) {
 
-				return this;
+				}
 			} : NO_MODEL_INSTANCE_METHOD;
 		});
 
@@ -89,14 +98,16 @@ const Registry = module.exports = function Registry(options) {
 			const handler = methods[methodName];
 
 			static[methodName] = async function (options) {
-				const target = {};
+				try {
+					const data = await handler(options, modelProxy);
+					//TODO 完整性检查
 
-				await handler(target, options);
-
-				//TODO 完整性检查
-				const instance = new ModelInstance(target);
-				
-				return instance.proxy;
+					const instance = new ModelInstance(data);
+					
+					return instance.proxy;
+				} catch (error) {
+					
+				}
 			};
 		});
 
@@ -112,7 +123,7 @@ const Registry = module.exports = function Registry(options) {
 		});
 	});
 
-	namespaceOptionsList.forEach(function NamespaceModel(options) {
+	namespaceOptionsMap.forEach(function NamespaceModel(options) {
 		// models[] = {};
 	});
 
@@ -120,6 +131,10 @@ const Registry = module.exports = function Registry(options) {
 		//TODO link remote db
 
 		//TODO model type check and compile
+
+		//TODO build static schemas
+
+		//TODO check subscribe
 
 		registry.emit('ready', registry);
 	}());

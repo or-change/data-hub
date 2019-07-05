@@ -1,6 +1,5 @@
 module.exports = {
-	name: 'PersonWithFamily',
-	schema: {
+	schemas: {
 		type: 'object',
 		properties: {
 			type: {
@@ -42,18 +41,17 @@ module.exports = {
 				}
 			}
 		},
-		allowNull: [],
-		comments: {
-			type: ''
-		}
+		allowNull: []
 	},
-	method: {
+	methods: {
 		create: {
-			comment: {},
 			async handler(options) {
 
 			},
 			mock() {
+
+			},
+			emit(data) {
 
 			}
 		},

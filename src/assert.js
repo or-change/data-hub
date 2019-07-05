@@ -8,6 +8,10 @@ exports.modelName = function validateModelName(name) {
 	return true;
 };
 
+exports.namespaceSymbol = function validateNamespaceSymbol() {
+
+};
+
 const MODEL_PROPERTY_NAME = /^[a-z0-9A-Z_]/;
 
 exports.modelPropertyName = function validateModelPropertyName(name) {
