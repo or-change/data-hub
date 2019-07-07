@@ -9,17 +9,15 @@ const NO_IMPLEMENTATION = MODEL_METHOD_LIST.reduce((context, name) => {
 	return context;
 }, {});
 
-exports.normalize = function normalizeOptions(options) {
+module.exports = function normalizeOptions(options) {
 	const finalOptions = {
-		strict = true,
-		models = {},
-		namespaces = {},
-		subscribes = {}
+		models: {},
+		namespaces: {},
+		subscribes: {}
 	};
 
 	const {
 		id,
-		strict = finalOptions.strict,
 		models = finalOptions.models,
 		namespaces = finalOptions.namespaces,
 		subscribes = finalOptions.subscribes
@@ -49,10 +47,17 @@ exports.normalize = function normalizeOptions(options) {
 			comments: null
 		};
 
-		const { schemas, methods } = models[name];
+		const {
+			schemas = finalModelOptions.schemas,
+			methods = finalModelOptions.methods
+		} = models[name];
 
-		if (schemas) {
+		if (typeof schemas !== 'object') {
+			throw new Error('Invalid `options.models[<symbol>].schemas`.');
+		}
 
+		if (typeof methods !== 'object') {
+			throw new Error('Invalid `options.models[<symbol>].methods`.');
 		}
 
 		if (methods) {
@@ -60,8 +65,9 @@ exports.normalize = function normalizeOptions(options) {
 				const options = methods[name];
 				const type = typeof options;
 				const finalMethodOptions = {
-					handler: NO_IMPLEMENTATION[name],
-					mock: NO_IMPLEMENTATION[name],
+					handler: null,
+					mock: null,
+					emit: null
 					// comments: null
 				};
 				
