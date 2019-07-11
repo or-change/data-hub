@@ -1,32 +1,173 @@
+function Accessor() {
+	return function accessor(dataNode) {
+		return dataNode;
+	};
+}
+
 module.exports = function install(Type) {
-	Type.define('number', function Normalizer() {
-		return function normalize(options) {
-			return {
-				type: 'number'
+	Type.define('number', {
+		Normalizer() {
+			return function normalize(options) {
+				const finalOptions = {
+					type: 'number',
+					range: [{
+						lt: { value: Infinity, equal: false },
+						gt: { value: -Infinity, equal: false }
+					}]
+				};
+
+				const {
+					range = finalOptions.range
+				} = options;
+
+				if (!Array.isArray(range)) {
+					throw new Error('Number range MUST be an array.');
+				}
+
+				finalOptions.range = range.map(options => {
+					if (typeof options === 'number') {
+						return {
+							lt: { value: options, equal: true },
+							gt: { value: options, equal: true }
+						};
+					}
+
+					if (typeof options === 'object') {
+						const finalOptions = {
+							lt: { value: Infinity, equal: false },
+							gt: { value: -Infinity, equal: false }
+						};
+
+						const {
+							lt = finalOptions.lt,
+							gt = finalOptions.gt
+						} = options;
+
+						if (lt) {
+							const {
+								value = finalOptions.lt.value,
+								equal = finalOptions.lt.equal
+							} = lt;
+
+							if (typeof value !== 'number') {
+								throw new Error('Number range[].lt.value MUST be a number.');
+							}
+
+							finalOptions.lt.value = value;
+
+							if (typeof equal !== 'boolean') {
+								throw new Error('Number range[].lt.equal MUST be a boolean.');
+							}
+
+							finalOptions.lt.equal = equal;
+						}
+
+						if (gt) {
+							const {
+								value = finalOptions.lt.value,
+								equal = finalOptions.lt.equal
+							} = gt;
+
+							if (typeof value !== 'number') {
+								throw new Error('Number range[].gt.value MUST be a number.');
+							}
+
+							finalOptions.gt.value = value;
+
+							if (typeof equal !== 'boolean') {
+								throw new Error('Number range[].gt.equal MUST be a boolean.');
+							}
+
+							finalOptions.lt.equal = equal;
+						}
+
+						if (finalOptions.lt < finalOptions.gt) {
+							throw new Error('It should range[].gt.value < range[].lt.value.');
+						}
+					}
+
+					throw new Error('Invalid range[] type.');
+				});
+
+				return finalOptions;
 			};
-		};
+		},
+		Validator(options) {
+			return function validate(data) {
+				if (typeof data !== 'number') {
+					return 'A number expected.';
+				}
+	
+				const hit = options.range.find(options => {
+					const { lt, gt } = options;
+
+					if (gt.equal ? data < gt.value : data <= gt.value) {
+						return false;
+					}
+
+					if (lt.equal ? data > gt.value : data >= gt.value) {
+						return false;
+					}
+
+					return true;
+				});
+	
+				if (hit === null) {
+					return 'The value does not hit the range.';
+				}
+			};
+		},
+		Accessor
 	});
 
-	Type.define('string', function Normalizer() {
-		return function normalize(options) {
-			const finalOptions = {
-				type: 'string',
-				pattern: null
+	Type.define('string', {
+		Normalizer() {
+			return function normalize(options) {
+				const finalOptions = {
+					type: 'string',
+					pattern: /.*/
+				};
+	
+				const {
+					pattern = finalOptions.pattern
+				} = options;
+
+				if (!(pattern instanceof RegExp)) {
+					throw new Error('Pattern MUST be a RegExp.');
+				}
+				
+				finalOptions.pattern = pattern;
+	
+				return finalOptions;
 			};
+		},
+		Validator(options) {
+			return function (data) {
+				if (typeof data !== 'string') {
+					return 'A string value expected.';
+				}
 
-			const { pattern } = options;
-
-			if (pattern) {
-				finalOptions.pattern = new RegExp(pattern);
-			}
-
-			return finalOptions;
-		};
+				if (!options.pattern.test(data)) {
+					return `The string is NOT match the pattern ${options.pattern}.`;
+				}
+			};
+		},
+		Accessor
 	});
 
-	Type.define('boolean', function Normalizer() {
-		return function normalize() {
-			return { type: 'boolean' };
-		};
+	Type.define('boolean', {
+		Normalizer() {
+			return function normalize() {
+				return { type: 'boolean' };
+			};
+		},
+		Validator() {
+			return function (data) {
+				if (typeof data !== 'boolean') {
+					return 'A boolean value expected.';
+				}
+			};
+		},
+		Accessor
 	});
 };

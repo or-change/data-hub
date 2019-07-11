@@ -17,17 +17,10 @@ module.exports = {
 			name: {
 				type: 'string',
 			},
-			age: {
-				type: 'number',
-				min: 0,
-				max: 200
-			},
+			age: { type: 'number', min: 0, max: 200 },
 			parentList: {
 				type: 'array',
-				items: {
-					type: 'model',
-					name: 'Person'
-				}
+				items: { type: 'model', name: 'Person' }
 			},
 			spouse: {
 				type: 'model',

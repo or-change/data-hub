@@ -1,9 +1,23 @@
 module.exports = function install(Type) {
-	Type.define('date', function Normalizer() {
-		return function normalize(options) {
-			return {
-				type: 'date'
+	Type.define('date', {
+		Normalizer() {
+			return function normalize(options) {
+				const finalOptions = {
+					type: 'date'
+				};
+				
+				return {
+					type: 'date'
+				};
 			};
-		};
+		},
+		Validator() {
+			return function validator(options) {
+
+			};
+		},
+		Accessor() {
+
+		}
 	});
 };
