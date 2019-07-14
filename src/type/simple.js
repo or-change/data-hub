@@ -4,8 +4,8 @@ function Accessor() {
 	};
 }
 
-module.exports = function install(Type) {
-	Type.define('number', {
+module.exports = function install(type) {
+	type.define('number', {
 		Normalizer() {
 			return function normalize(options) {
 				const finalOptions = {
@@ -120,7 +120,7 @@ module.exports = function install(Type) {
 		Accessor
 	});
 
-	Type.define('string', {
+	type.define('string', {
 		Normalizer() {
 			return function normalize(options) {
 				const finalOptions = {
@@ -155,7 +155,7 @@ module.exports = function install(Type) {
 		Accessor
 	});
 
-	Type.define('boolean', {
+	type.define('boolean', {
 		Normalizer() {
 			return function normalize() {
 				return { type: 'boolean' };

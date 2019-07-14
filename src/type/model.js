@@ -1,7 +1,7 @@
-module.exports = function install(Type) {
-	const symbolReg = Type.ModelSymbolReg = /^[A-Z][A-Za-z0-9]*/;
+module.exports = function install(type, context) {
+	const symbolReg = type.ModelSymbolReg = /^[A-Z][A-Za-z0-9]*/;
 
-	Type.define('model', {
+	type.define('model', {
 		Normalizer(compiler) {
 			return function normalize(options, root) {
 				if (root) {
@@ -27,16 +27,16 @@ module.exports = function install(Type) {
 				return finalOptions;
 			};
 		},
-		Validator(options, models) {
+		Validator(options) {
 			return function validate(data) {
-				return models.[options.model].validator(data);
+				return context.models[options.model].validate(data);
 			};
 		},
-		Accessor(options, models) {
-			return function accessor(dataNode) {
-				const { ModelInstance } =  models[options.model];
+		Accessor(options) {
+			return function access(dataNode) {
+				const Model = context.models[options.model];
 
-				return new ModelInstance(dataNode).proxy;
+				return new Model.Instance(dataNode).proxy;
 			};
 		}
 	});

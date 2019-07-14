@@ -1,7 +1,5 @@
-module.exports = function install(Type) {
-	const objectProxyHanlder = {};
-
-	Type.define('object', {
+module.exports = function install(type) {
+	type.define('object', {
 		Normalizer(compiler) {
 			return function normalize(options) {
 				const finalOptions = {
@@ -50,22 +48,55 @@ module.exports = function install(Type) {
 		Validator(options) {
 			const validatorMapping = {};
 
-			for(const propertyName in options) {
+			for(const propertyName in options.properties) {
+				const options = options.properties[propertyName];
 
+				validatorMapping[propertyName] = type.registry[options.type].Validator(options);
 			}
 
-			return function (data) {
-
-			}
+			return function (dataNode) {
+				// for (const propertyName in validatorMapping) {
+				// 	const 
+				// }
+			};
 		},
 		Accessor(options) {
-			return function (dataNode) {
-				return new Proxy(dataNode, objectProxyHanlder);
+			const accessors = {};
+
+			for (const name in options.properties) {
+				const propertyOptions = options.properties[name];
+
+				accessors[name] = type.registry[propertyOptions.type].Accessor(propertyOptions);
 			}
+
+			const proxyHandler =  {
+				set() {
+					throw new Error('Illegal access.');
+				},
+				get(target, key) {
+					const options = options.properties[key];
+
+					if (!options) {
+						throw new Error(`Property ${key} is NOT defined.`);
+					}
+
+					const data = target[key];
+
+					if (data === null) {
+						return null;
+					}
+
+					return accessors[key](data);
+				}
+			};
+
+			return function access(dataNode) {
+				return new Proxy(dataNode, proxyHandler);
+			};
 		}
 	});
 
-	Type.define('array', {
+	type.define('array', {
 		Normalizer(compiler) {
 			return function normalize(options) {
 				const finalOptions = {
@@ -99,11 +130,37 @@ module.exports = function install(Type) {
 				return finalOptions;
 			};
 		},
-		Validator() {
+		Validator(options) {
 
 		},
-		Accessor(options, Models) {
+		Accessor(options) {
+			const itemsOptions = options.items;
+			const access = type.registry[itemsOptions.type].Accessor(itemsOptions);
 
-		}
+			const proxyHandler =  {
+				set() {
+					throw new Error('Illegal access.');
+				},
+				get(target, key) {
+					const options = options.properties[key];
+
+					if (!options) {
+						throw new Error(`Property ${key} is NOT defined.`);
+					}
+
+					const data = target[key];
+
+					if (data === null) {
+						return null;
+					}
+
+					return access(data);
+				}
+			};
+
+			return function access(dataNode) {
+				return new Proxy(dataNode, proxyHandler);
+			}
+		},
 	});
 };

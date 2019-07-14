@@ -20,4 +20,22 @@ module.exports = function install(Type) {
 
 		}
 	});
+
+	Type.define('blob', {
+		Normalizer() {
+
+		},
+		Validator() {
+
+		},
+		Accessor() {
+
+		}
+	});
+
+	Type.Blob = class Blob {
+		constructor(buffer, contentType) {
+			
+		}
+	};
 };

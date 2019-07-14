@@ -1,4 +1,4 @@
-const assert = require('./assert');
+const assert = require('../assert');
 
 const MODEL_METHOD_LIST = ['create', 'delete', 'update', 'query'];
 const NO_IMPLEMENTATION = MODEL_METHOD_LIST.reduce((context, name) => {
@@ -120,7 +120,7 @@ module.exports = function normalizeOptions(options) {
 			protocol,
 			token,
 			id,
-			modelList = []
+			models = []
 		} = namespaces[symbol];
 	}
 
