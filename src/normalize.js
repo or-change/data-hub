@@ -1,5 +1,3 @@
-const assert = require('../assert');
-
 const MODEL_METHOD_LIST = ['create', 'delete', 'update', 'query'];
 const NO_IMPLEMENTATION = MODEL_METHOD_LIST.reduce((context, name) => {
 	context[name] = function throwNotImplement() {
@@ -8,6 +6,7 @@ const NO_IMPLEMENTATION = MODEL_METHOD_LIST.reduce((context, name) => {
 
 	return context;
 }, {});
+const ID_REG = /[0-9a-z.]/;
 
 module.exports = function normalizeOptions(options) {
 	const finalOptions = {
@@ -26,7 +25,7 @@ module.exports = function normalizeOptions(options) {
 	/**
 	 * id
 	 */
-	if (!assert.registryId(id)) {
+	if (!ID_REG.test(id)) {
 		throw new Error('Invalid registry id.');
 	}
 
@@ -40,8 +39,9 @@ module.exports = function normalizeOptions(options) {
 		throw new Error('Property `options.models` MUST be an object.');
 	}
 
-	for (const name in models) {
+	for (const symbol in models) {
 		const finalModelOptions = {
+			symbol,
 			schemas: {},
 			methods: {},
 			comments: null
@@ -50,7 +50,7 @@ module.exports = function normalizeOptions(options) {
 		const {
 			schemas = finalModelOptions.schemas,
 			methods = finalModelOptions.methods
-		} = models[name];
+		} = models[symbol];
 
 		if (typeof schemas !== 'object') {
 			throw new Error('Invalid `options.models[<symbol>].schemas`.');
@@ -85,7 +85,7 @@ module.exports = function normalizeOptions(options) {
 					}
 
 					if (mock) {
-						if (typeof mock === 'function') {
+						if (typeof mock !== 'function') {
 							throw new Error('Method mock MUST be a function.');
 						}
 
@@ -93,7 +93,7 @@ module.exports = function normalizeOptions(options) {
 					}
 
 					if (emit) {
-						if (typeof emit === 'function') {
+						if (typeof emit !== 'function') {
 							throw new Error('Method emit MUST be a function.');
 						}
 						
@@ -108,8 +108,10 @@ module.exports = function normalizeOptions(options) {
 				finalModelOptions.methods[name] = finalMethodOptions; 
 			});
 		}
-
-		finalOptions.models[name] = finalModelOptions;
+		
+		//TODO
+		finalModelOptions.schemas = schemas;
+		finalOptions.models[symbol] = finalModelOptions;
 	}
 
 	/**

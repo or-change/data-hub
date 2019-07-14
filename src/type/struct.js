@@ -1,3 +1,5 @@
+const inspect = Symbol.for('nodejs.util.inspect.custom');
+
 module.exports = function install(type) {
 	type.define('object', {
 		Normalizer(compiler) {
@@ -46,18 +48,42 @@ module.exports = function install(type) {
 			};
 		},
 		Validator(options) {
-			const validatorMapping = {};
+			const validateMapping = {};
+			const allowNull = options.allowNull.reduce((mapping, propertyName) => {
+				mapping[propertyName] = true;
+
+				return mapping;
+			}, {});
 
 			for(const propertyName in options.properties) {
-				const options = options.properties[propertyName];
+				const propertyOptions = options.properties[propertyName];
+				const _validate = type.registry[propertyOptions.type].Validator(propertyOptions);
 
-				validatorMapping[propertyName] = type.registry[options.type].Validator(options);
+				validateMapping[propertyName] = function validateWrap(propertyDataNode) {
+					if (propertyDataNode === undefined) {
+						throw new Error(`_.${propertyName} could not be undefined.`);
+					}
+
+					if (!allowNull[propertyName] && propertyDataNode === null) {
+						throw new Error(`_.${propertyName} could NOT be null.`);
+					} else if (propertyDataNode !== null) {
+						_validate(propertyDataNode);
+					}
+				};
 			}
 
-			return function (dataNode) {
-				// for (const propertyName in validatorMapping) {
-				// 	const 
-				// }
+			return function validate(dataNode) {
+				if (typeof dataNode !== 'object') {
+					throw new Error('An object expected.');
+				}
+
+				if (!options.additional) {
+					Object.keys(dataNode).find(property => !validateMapping[property]);
+				}
+				
+				for (const propertyName in validateMapping) {
+					validateMapping[propertyName](dataNode[propertyName]);
+				}
 			};
 		},
 		Accessor(options) {
@@ -74,19 +100,29 @@ module.exports = function install(type) {
 					throw new Error('Illegal access.');
 				},
 				get(target, key) {
-					const options = options.properties[key];
+					if (key === inspect) {
+						return function () {
+							return 'ModelType: <object>';
+						};
+					}
 
-					if (!options) {
+					if (key === 'toJSON') {
+						const json = JSON.stringify(target);
+
+						return function () {
+							return json;
+						};
+					}
+					
+					const propertyOptions = options.properties[key];
+
+					if (!propertyOptions) {
 						throw new Error(`Property ${key} is NOT defined.`);
 					}
 
 					const data = target[key];
 
-					if (data === null) {
-						return null;
-					}
-
-					return accessors[key](data);
+					return data && accessors[key](data);
 				}
 			};
 
@@ -131,7 +167,16 @@ module.exports = function install(type) {
 			};
 		},
 		Validator(options) {
+			const itemOptions = options.items;
+			const itemValidate = type.registry[itemOptions.type].Validator(itemOptions);
 
+			return function validate(dataNode) {
+				if (!Array.isArray(dataNode)) {
+					throw new Error('An array expected.');
+				}
+
+				dataNode.forEach(item => itemValidate(item));
+			};
 		},
 		Accessor(options) {
 			const itemsOptions = options.items;
@@ -160,7 +205,7 @@ module.exports = function install(type) {
 
 			return function access(dataNode) {
 				return new Proxy(dataNode, proxyHandler);
-			}
+			};
 		},
 	});
 };

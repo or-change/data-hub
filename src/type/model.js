@@ -29,7 +29,7 @@ module.exports = function install(type, context) {
 		},
 		Validator(options) {
 			return function validate(data) {
-				return context.models[options.model].validate(data);
+				return context.models[options.symbol].validate(data);
 			};
 		},
 		Accessor(options) {

@@ -7,7 +7,7 @@ const KEYWORDS = { $as: true, $data: true, $type: true, $update: true, $delete: 
 const Model = module.exports = class Model {
 	constructor(symbol, options, context) {
 		const { schemas, methods } = options;
-		const { validate } = context.compiler.build(schemas);
+		const validate = context.compiler.build(schemas);
 
 		const access = context.type.registry[schemas.type].Accessor(schemas);
 		const proxyModelInstance = {
@@ -19,13 +19,14 @@ const Model = module.exports = class Model {
 					return Reflect.get(target, key, target);
 				}
 		
-				return access(target.data).key;
+				return target.dataProxy;
 			}
 		};
 		
 		class ModelInstance {
 			constructor(data) {
 				this.data = data;
+				this.dataProxy = access(data);
 				this.proxy = new Proxy(this, proxyModelInstance);
 			}
 	
@@ -43,11 +44,10 @@ const Model = module.exports = class Model {
 		}
 	
 		async function methodInvoker(handler, payload, options) {
+			//TODO normalize
 			const mergedOptions = Object.assign({}, {
 				strict: context.strict
-			}, {
-				strict: options.strict
-			});
+			}, options);
 
 			const data = await handler(payload);
 	
@@ -58,10 +58,10 @@ const Model = module.exports = class Model {
 			return data;
 		}
 
-		['$update', '$delete'].forEach(methodName => {
+		['update', 'delete'].forEach(methodName => {
 			const { handler } = methods[methodName];
 
-			ModelInstance.prototype[methodName] = handler && async function (payload, options) {
+			ModelInstance.prototype['$' + methodName] = handler && async function (payload, options) {
 				this.data = await methodInvoker(handler, payload, options);
 
 				return this;
@@ -69,9 +69,9 @@ const Model = module.exports = class Model {
 		});
 		
 		['create', 'query'].forEach(methodName => {
-			const handler = methods[methodName];
+			const { handler, mock } = methods[methodName];
 
-			this[methodName] = handler && async function (payload, options) {
+			this[methodName] = handler && async function (payload = null, options = {}) {
 				const data = await methodInvoker(handler, payload, options);
 				const instance = new ModelInstance(data);
 				

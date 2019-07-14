@@ -1,4 +1,4 @@
-exports.Station = require('./src/station');
+exports.Station = require('./src/hub');
 exports.createStation = function createStation(options) {
 
 };

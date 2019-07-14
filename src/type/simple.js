@@ -1,5 +1,5 @@
 function Accessor() {
-	return function accessor(dataNode) {
+	return function access(dataNode) {
 		return dataNode;
 	};
 }
@@ -81,12 +81,12 @@ module.exports = function install(type) {
 							finalOptions.lt.equal = equal;
 						}
 
-						if (finalOptions.lt < finalOptions.gt) {
+						if (finalOptions.lt.value < finalOptions.gt.value) {
 							throw new Error('It should range[].gt.value < range[].lt.value.');
 						}
-					}
 
-					throw new Error('Invalid range[] type.');
+						return finalOptions;
+					}
 				});
 
 				return finalOptions;
@@ -95,7 +95,7 @@ module.exports = function install(type) {
 		Validator(options) {
 			return function validate(data) {
 				if (typeof data !== 'number') {
-					return 'A number expected.';
+					throw new Error('A number expected.');
 				}
 	
 				const hit = options.range.find(options => {
@@ -105,15 +105,15 @@ module.exports = function install(type) {
 						return false;
 					}
 
-					if (lt.equal ? data > gt.value : data >= gt.value) {
+					if (lt.equal ? data > lt.value : data >= lt.value) {
 						return false;
 					}
 
 					return true;
 				});
 	
-				if (hit === null) {
-					return 'The value does not hit the range.';
+				if (!hit) {
+					throw new Error('The value does not hit the range.');
 				}
 			};
 		},

@@ -1,6 +1,6 @@
 const EventEmitter = require('events');
 
-const structure = require('./structure');
+const struct = require('./struct');
 const simple = require('./simple');
 const native = require('./native');
 const model = require('./model');
@@ -31,12 +31,12 @@ module.exports = function Type(context) {
 					this.normalizer = {};
 
 					for (const symbol in type.registry) {
-						const _normalizer = type.registry[symbol].Normalize(this);
+						const _normalize = type.registry[symbol].Normalizer(this);
 
 						this.normalizer[symbol] = function normalize(options, root) {
 							type.Schemas.assert(options);
 
-							return _normalizer(options, root);
+							return _normalize(options, root);
 						};
 					}
 				}
@@ -46,7 +46,7 @@ module.exports = function Type(context) {
 				}
 
 				build(schemas, models) {
-					return type.registry.Validator(this.parse(schemas), models);
+					return type.registry[schemas.type].Validator(this.parse(schemas), models);
 				}
 			},
 		},
@@ -55,7 +55,7 @@ module.exports = function Type(context) {
 		}
 	};
 
-	[structure, simple, native, model].forEach(install => install(type, context));
+	[struct, simple, native, model].forEach(install => install(type, context));
 
 	return type;
 };

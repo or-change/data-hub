@@ -5,7 +5,7 @@ const Type = require('../src/type');
 describe('Type::', function () {
 	describe('Schemas::', function () {
 		describe('Compliler::', function () {
-			describe.only('#parse()', function () {
+			describe('#parse()', function () {
 				it('compile a typical schema successfully.', function () {
 					const schema = {
 						type: 'object',

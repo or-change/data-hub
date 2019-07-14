@@ -1,8 +1,24 @@
 const EventEmitter = require('events');
 const Type = require('./type');
 const Model = require('./model');
+const normalize = require('./normalize');
 
-module.exports = function Station(options) {
+const MODELS_PROXY = {
+	get(models, symbol) {
+		const model = models[symbol];
+
+		if (!model) {
+			throw new Error('The model is NOT defined.');
+		}
+
+		return model.proxy;
+	},
+	set() {
+		throw new Error('Illegal access.');
+	}
+};
+
+module.exports = function Hub(options) {
 	const {
 		id,
 		models: modelsOptions,
@@ -10,21 +26,21 @@ module.exports = function Station(options) {
 		subscribes: subscribeOptions,
 		protocol = [],
 		plugins = [],
-		strict = false
+		strict = true
 	} = normalize(options);
 
 	const context = {
 		models: {},
 		namespaces: {},
 		required: {},
-		defined: {}
+		defined: {},
+		strict
 	};
 	
-	const compiler = Type.Schemas.Compiler(context.models);
+	const type = context.type = new Type(context);
+	const compiler = context.compiler = new type.Schemas.Compiler(context.models);
 
 	compiler.on('model-require', symbol => context.required[symbol] = true);
-
-	context.type = new Type(context);
 
 	for (const symbol in modelsOptions) {
 		const options = modelsOptions[symbol];
@@ -33,7 +49,7 @@ module.exports = function Station(options) {
 			throw new Error('It should be `symbol === options.symbol`.');
 		}
 
-		context.models[symbol] = new Model(symbol, modelsOptions[symbol], compiler);
+		context.models[symbol] = new Model(symbol, modelsOptions[symbol], context);
 		context.defined[symbol] = true;
 	}
 
@@ -55,7 +71,20 @@ module.exports = function Station(options) {
 			throw new Error(`The required Model(${requiredSymbol}) is NOT defined.`);
 		}
 	});
-		
+	
+	const hub = Object.create(new EventEmitter(), {
+		model: {
+			value: new Proxy(context.models, MODELS_PROXY)
+		},
+		overview: {
+			get() {
+				return {
+					id
+				};
+			}
+		}
+	});
+
 	(async function bootstrap() {
 		//TODO link remote db
 
@@ -65,27 +94,8 @@ module.exports = function Station(options) {
 
 		//TODO check subscribe
 
-		registry.emit('ready', registry);
+		hub.emit('ready', hub);
 	}());
 
-
-	return Object.create(new EventEmitter(), {
-		model(symbol) {
-			const model = context.models[symbol];
-
-			if (!model) {
-				throw new Error('The model is NOT defined.');
-			}
-
-			return model.proxy;
-		},
-		get overview() {
-			return {};
-		}
-	});
-
-};
-
-function normalize() {
-
+	return hub;
 };

@@ -1,5 +1,5 @@
 const assert = require('assert');
-const normalize = require('../src/model/normalize');
+const normalize = require('../src/normalize');
 
 describe('normalize::', function () {
 
