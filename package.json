@@ -1,6 +1,6 @@
 {
   "name": "@or-change/data-hub",
-  "version": "1.0.0",
+  "version": "0.1.0",
   "description": "",
   "main": "index.js",
   "directories": {
@@ -23,5 +23,9 @@
   "devDependencies": {
     "mocha": "^6.1.4"
   },
-  "dependencies": {}
+  "dependencies": {},
+  "files": [
+    "/src",
+    "/index.js"
+  ]
 }

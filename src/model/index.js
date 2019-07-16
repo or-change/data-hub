@@ -18,8 +18,8 @@ const Model = module.exports = class Model {
 				if (KEYWORDS[key]) {
 					return Reflect.get(target, key, target);
 				}
-		
-				return target.dataProxy;
+
+				return target.dataProxy[key];
 			}
 		};
 		

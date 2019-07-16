@@ -144,11 +144,11 @@ module.exports = function install(type) {
 		Validator(options) {
 			return function (data) {
 				if (typeof data !== 'string') {
-					return 'A string value expected.';
+					throw new Error('A string value expected.');
 				}
 
 				if (!options.pattern.test(data)) {
-					return `The string is NOT match the pattern ${options.pattern}.`;
+					throw new Error(`The string is NOT match the pattern ${options.pattern}.`);
 				}
 			};
 		},

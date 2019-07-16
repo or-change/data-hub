@@ -34,7 +34,7 @@ module.exports = function install(type, context) {
 		},
 		Accessor(options) {
 			return function access(dataNode) {
-				const Model = context.models[options.model];
+				const Model = context.models[options.symbol];
 
 				return new Model.Instance(dataNode).proxy;
 			};

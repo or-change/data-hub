@@ -106,18 +106,29 @@ module.exports = function install(type) {
 						};
 					}
 
+					/**
+					 * For `JSON.stringify()`
+					 */
 					if (key === 'toJSON') {
-						const json = JSON.stringify(target);
-
-						return function () {
-							return json;
+						return function toJSON() {
+							return JSON.stringify(target);
 						};
 					}
 					
 					const propertyOptions = options.properties[key];
 
 					if (!propertyOptions) {
-						throw new Error(`Property ${key} is NOT defined.`);
+						if (key === 'then') {
+							/**
+							 * For `await`.
+							 * 
+							 * This is not a thenable object.
+							 */
+
+							return;
+						} else {
+							throw new Error(`Property ${key} is NOT defined.`);
+						}
 					}
 
 					const data = target[key];
@@ -187,12 +198,6 @@ module.exports = function install(type) {
 					throw new Error('Illegal access.');
 				},
 				get(target, key) {
-					const options = options.properties[key];
-
-					if (!options) {
-						throw new Error(`Property ${key} is NOT defined.`);
-					}
-
 					const data = target[key];
 
 					if (data === null) {

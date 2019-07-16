@@ -18,84 +18,88 @@ const MODELS_PROXY = {
 	}
 };
 
-module.exports = function Hub(options) {
-	const {
-		id,
-		models: modelsOptions,
-		namespaces: namespacesOptions,
-		subscribes: subscribeOptions,
-		protocol = [],
-		plugins = [],
-		strict = true
-	} = normalize(options);
+module.exports = class DataHub extends EventEmitter {
+	constructor(options) {
+		super();
 
-	const context = {
-		models: {},
-		namespaces: {},
-		required: {},
-		defined: {},
-		strict
-	};
+		const {
+			id,
+			models: modelsOptions,
+			namespaces: namespacesOptions,
+			subscribes: subscribeOptions,
+			protocol = [],
+			plugins = [],
+			strict = true
+		} = normalize(options);
 	
-	const type = context.type = new Type(context);
-	const compiler = context.compiler = new type.Schemas.Compiler(context.models);
-
-	compiler.on('model-require', symbol => context.required[symbol] = true);
-
-	for (const symbol in modelsOptions) {
-		const options = modelsOptions[symbol];
-
-		if (symbol !== options.symbol) {
-			throw new Error('It should be `symbol === options.symbol`.');
-		}
-
-		context.models[symbol] = new Model(symbol, modelsOptions[symbol], context);
-		context.defined[symbol] = true;
-	}
-
-	for (const parentSymbol in namespacesOptions) {
-		const options = namespacesOptions[parentSymbol];
-
-		options.models.forEach(symbol => {
-			const fullSymbol = `${parentSymbol}.${symbol}`;
-
-			context.models[fullSymbol] = new Model.Namespace(fullSymbol);
-			context.defined[fullSymbol] = true;
-		});
-
-		context.namespaces[parentSymbol] = options;
-	}
-
-	Object.keys(context.required).forEach(requiredSymbol => {
-		if (!context.defined[requiredSymbol]) {
-			throw new Error(`The required Model(${requiredSymbol}) is NOT defined.`);
-		}
-	});
+		const context = {
+			models: {},
+			namespaces: {},
+			required: {},
+			defined: {},
+			strict
+		};
+		
+		const type = context.type = new Type(context);
+		const compiler = context.compiler = new type.Schemas.Compiler(context.models);
 	
-	const hub = Object.create(new EventEmitter(), {
-		model: {
-			value: new Proxy(context.models, MODELS_PROXY)
-		},
-		overview: {
-			get() {
-				return {
-					id
-				};
+		compiler.on('model-require', symbol => context.required[symbol] = true);
+	
+		for (const symbol in modelsOptions) {
+			const options = modelsOptions[symbol];
+	
+			if (symbol !== options.symbol) {
+				throw new Error('It should be `symbol === options.symbol`.');
 			}
+	
+			context.models[symbol] = new Model(symbol, modelsOptions[symbol], context);
+			context.defined[symbol] = true;
 		}
-	});
-
-	(async function bootstrap() {
-		//TODO link remote db
-
-		//TODO model type check and compile
-
-		//TODO build static schemas
-
-		//TODO check subscribe
-
-		hub.emit('ready', hub);
-	}());
-
-	return hub;
+	
+		for (const parentSymbol in namespacesOptions) {
+			const options = namespacesOptions[parentSymbol];
+	
+			options.models.forEach(symbol => {
+				const fullSymbol = `${parentSymbol}.${symbol}`;
+	
+				context.models[fullSymbol] = new Model.Namespace(fullSymbol);
+				context.defined[fullSymbol] = true;
+			});
+	
+			context.namespaces[parentSymbol] = options;
+		}
+	
+		Object.keys(context.required).forEach(requiredSymbol => {
+			if (!context.defined[requiredSymbol]) {
+				throw new Error(`The required Model(${requiredSymbol}) is NOT defined.`);
+			}
+		});
+		
+		Object.defineProperties(this, {
+			overview: {
+				get() {
+					return {
+						id
+					};
+				}
+			},
+			model: {
+				get() {
+					return Object.assign({}, context.models);
+				}
+			}
+		});
+	
+		(async () => {
+			//TODO link remote db
+	
+			//TODO model type check and compile
+	
+			//TODO build static schemas
+	
+			//TODO check subscribe
+	
+			this.emit('ready', this);
+		})();
+	}
 };

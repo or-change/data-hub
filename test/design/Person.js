@@ -10,7 +10,7 @@ module.exports = {
 				]
 			},
 			man: { type: 'boolean' },
-			name: { type: 'string' },
+			name: { type: 'string', pattern: /.{2,12}/ },
 			age: {
 				type: 'number',
 				range: [
@@ -19,9 +19,18 @@ module.exports = {
 			},
 			parentList: { type: 'array', items: { type: 'model', symbol: 'Person' } },
 			spouse: { type: 'model', symbol: 'Person' },
-			childList: { type: 'array', items: { type: 'model', symbol: 'Person' } }
+			childList: { type: 'array', items: { type: 'model', symbol: 'Person' } },
+			test: {
+				type: 'object',
+				properties: {
+					boss: {
+						type: 'model',
+						symbol: 'Person'
+					}
+				}
+			}
 		},
-		allowNull: ['childList', 'spouse']
+		allowNull: ['spouse', 'test']
 	},
 	methods: {
 		create: {
@@ -29,11 +38,33 @@ module.exports = {
 				return {
 					id: 1,
 					man: true,
-					name: 'a',
+					name: 'abc',
 					age: 18,
-					parentList: [],
+					parentList: [
+						{
+							id: 2,
+							man: true,
+							name: '2b',
+							age: 18,
+							parentList: [],
+							spouse: null,
+							childList: [],
+							test: null
+						}
+					],
 					spouse: null,
-					childList: null
+					childList: [],
+					test: {
+						boss: {
+							id: 3,
+							man: true,
+							name: '4b',
+							age: 18,
+							parentList: [],
+							spouse: null,
+							childList: [],
+							test: null}
+					}
 				};
 			},
 			mock() {
