@@ -27,5 +27,7 @@ describe.only('debug::', function () {
 		console.log(person.test.boss);
 		console.log(person.test.boss.name);
 		console.log(JSON.stringify(person.parentList[0]));
+
+		person.$delete();
 	});
 });

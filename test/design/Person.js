@@ -78,7 +78,7 @@ module.exports = {
 			return {};
 		},
 		delete(options) {
-			
+			console.log(this)
 		},
 	}
 };

@@ -43,13 +43,13 @@ const Model = module.exports = class Model {
 			}
 		}
 	
-		async function methodInvoker(handler, payload, options) {
+		async function methodInvoker(handler, payload, options, ctx) {
 			//TODO normalize
 			const mergedOptions = Object.assign({}, {
 				strict: context.strict
 			}, options);
 
-			const data = await handler(payload);
+			const data = await handler.call(ctx, payload);
 	
 			if (mergedOptions.strict) {
 				validate(data);
@@ -62,7 +62,7 @@ const Model = module.exports = class Model {
 			const { handler } = methods[methodName];
 
 			ModelInstance.prototype['$' + methodName] = handler && async function (payload, options) {
-				this.data = await methodInvoker(handler, payload, options);
+				this.data = await methodInvoker(handler, payload, options, this);
 
 				return this;
 			};
@@ -72,7 +72,7 @@ const Model = module.exports = class Model {
 			const { handler, mock } = methods[methodName];
 
 			this[methodName] = handler && async function (payload = null, options = {}) {
-				const data = await methodInvoker(handler, payload, options);
+				const data = await methodInvoker(handler, payload, options, null);
 				const instance = new ModelInstance(data);
 				
 				return instance.proxy;

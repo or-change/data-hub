@@ -1,6 +1,6 @@
 {
   "name": "@or-change/data-hub",
-  "version": "0.1.1",
+  "version": "0.1.2",
   "description": "",
   "main": "index.js",
   "directories": {
@@ -14,7 +14,7 @@
     "url": "git+https://github.com/or-change/model.git"
   },
   "keywords": [],
-  "author": "",
+  "author": "Chaos Lee",
   "license": "MIT",
   "bugs": {
     "url": "https://github.com/or-change/model/issues"
