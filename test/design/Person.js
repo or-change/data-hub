@@ -34,7 +34,7 @@ module.exports = {
 	},
 	methods: {
 		create: {
-			async handler(options) {
+			async handler(options, Model) {
 				return {
 					id: 1,
 					man: true,

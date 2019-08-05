@@ -197,8 +197,16 @@ module.exports = function install(type) {
 				set() {
 					throw new Error('Illegal access.');
 				},
-				get(target, key) {
-					const data = target[key];
+				get(target, index) {
+					if (index === 'then') {
+						return;
+					}
+
+					if (index === 'length') {
+						return target.length;
+					}
+
+					const data = target[index];
 
 					if (data === null) {
 						return null;

@@ -49,7 +49,7 @@ const Model = module.exports = class Model {
 				strict: context.strict
 			}, options);
 
-			const data = await handler.call(ctx, payload);
+			const data = await handler.call(ctx, payload, context.models);
 	
 			if (mergedOptions.strict) {
 				validate(data);
