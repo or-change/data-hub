@@ -15,6 +15,10 @@ const Model = module.exports = class Model {
 				throw new Error('Illegal access.');
 			},
 			get(target, key) {
+				if (key === '$update' || key === '$delete') {
+					return target[key].bind(target);
+				}
+
 				if (KEYWORDS[key]) {
 					return Reflect.get(target, key, target);
 				}
@@ -51,7 +55,7 @@ const Model = module.exports = class Model {
 
 			const data = await handler.call(ctx, payload, context.models);
 	
-			if (mergedOptions.strict) {
+			if (data !== null && mergedOptions.strict) {
 				validate(data);
 			}
 	
@@ -62,9 +66,9 @@ const Model = module.exports = class Model {
 			const { handler } = methods[methodName];
 
 			ModelInstance.prototype['$' + methodName] = handler && async function (payload, options) {
-				this.data = await methodInvoker(handler, payload, options, this);
+				this.data = await methodInvoker(handler, payload, options, this.proxy);
 
-				return this;
+				return this.proxy;
 			};
 		});
 		
@@ -73,6 +77,11 @@ const Model = module.exports = class Model {
 
 			this[methodName] = handler && async function (payload = null, options = {}) {
 				const data = await methodInvoker(handler, payload, options, null);
+
+				if (data === null || data === undefined) {
+					return null;
+				}
+
 				const instance = new ModelInstance(data);
 				
 				return instance.proxy;

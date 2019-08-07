@@ -99,41 +99,20 @@ module.exports = function install(type) {
 				set() {
 					throw new Error('Illegal access.');
 				},
-				get(target, key) {
-					if (key === inspect) {
-						return function () {
-							return 'ModelType: <object>';
-						};
-					}
-
-					/**
-					 * For `JSON.stringify()`
-					 */
+				get(target, key, receiver) {
 					if (key === 'toJSON') {
 						return function toJSON() {
-							return JSON.stringify(target);
+							return target;
 						};
 					}
 					
-					const propertyOptions = options.properties[key];
+					if (key in options.properties) {
+						const data = target[key];
 
-					if (!propertyOptions) {
-						if (key === 'then') {
-							/**
-							 * For `await`.
-							 * 
-							 * This is not a thenable object.
-							 */
-
-							return;
-						} else {
-							throw new Error(`Property ${key} is NOT defined.`);
-						}
+						return data && accessors[key](data);
+					} else {
+						return Reflect.get(target, key, receiver);
 					}
-
-					const data = target[key];
-
-					return data && accessors[key](data);
 				}
 			};
 
@@ -197,22 +176,22 @@ module.exports = function install(type) {
 				set() {
 					throw new Error('Illegal access.');
 				},
-				get(target, index) {
-					if (index === 'then') {
-						return;
-					}
-
+				get(target, index, receiver) {
 					if (index === 'length') {
 						return target.length;
 					}
 
-					const data = target[index];
-
-					if (data === null) {
-						return null;
+					if (index === 'toJSON') {
+						return function toJSON() {
+							return target;
+						};
+					}
+					
+					if (index < target.length && index >= 0) {
+						return access(target[index]);
 					}
 
-					return access(data);
+					return Reflect.get(target, index, receiver);
 				}
 			};
 
